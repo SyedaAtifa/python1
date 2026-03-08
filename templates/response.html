@@ -1,0 +1,36 @@
+<!-- templates/response.html -->
+{% extends 'base.html' %}
+{% block title %}Your Career Path{% endblock %}
+
+{% block content %}
+    <h1>📈 Hello, {{ name }}!</h1>
+    <p class="response-text">
+        {{ advice }}
+        {% if other and advice_id and other[0].average_rating() %}
+            <br><small>Average rating: {{ '%.1f'|format(other[0].average_rating()) }}</small>
+        {% endif %}
+    </p>
+    {% if other and other|length > 1 %}
+        <h3>Other suggestions:</h3>
+        <ul>
+            {% for adv in other[1:] %}
+                <li>{{ adv.text }} {% if adv.average_rating() %} (avg. {{ '%.1f'|format(adv.average_rating()) }}){% endif %}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if advice_id %}
+    <form action="{{ url_for('rate') }}" method="post">
+        {{ csrf_token() }}
+        <input type="hidden" name="advice_id" value="{{ advice_id }}">
+        <label for="rating">Rate this advice (1–5):</label>
+        <select name="rating" id="rating" required>
+            <option value="">Choose...</option>
+            {% for r in range(1,6) %}
+                <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Submit Rating</button>
+    </form>
+    {% endif %}
+    <a class="btn-back" href="/">🔁 Go Back</a>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Add Interest{% endblock %}
+
+{% block content %}
+<h1>Add a New Interest</h1>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <label>{{ form.name.label }}</label>
+    {{ form.name() }}
+    {{ form.submit() }}
+</form>
+{% endblock %}

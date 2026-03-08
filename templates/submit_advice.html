@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Submit Advice{% endblock %}
+
+{% block content %}
+<h1>Submit Career Advice</h1>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <label>{{ form.interest.label }}</label>
+    {{ form.interest() }}
+
+    <label>{{ form.text.label }}</label>
+    {{ form.text(rows=4) }}
+
+    {{ form.submit() }}
+</form>
+{% endblock %}

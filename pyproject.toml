@@ -1,0 +1,13 @@
+[project]
+name = "python-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=3.1.0",
+    "flask-login",
+    "flask-wtf",
+    "flask-sqlalchemy",
+    "gunicorn>=23.0.0",
+]
