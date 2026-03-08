@@ -11,7 +11,14 @@ from flask_login import login_user, logout_user, login_required, current_user
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///career.db'
+
+# Use /tmp for Vercel serverless, local for development
+if os.environ.get('VERCEL'):
+    db_path = '/tmp/career.db'
+else:
+    db_path = 'instance/career.db'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # initialize extensions
@@ -25,25 +32,37 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 def create_tables():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+        return
+    
     # seed default interests and advice from JSON file
     try:
         import json
         with open('advice_data.json', 'r', encoding='utf-8') as f:
             data = json.load(f)
             for interest_name, advice_text in data.items():
-                interest = Interest.query.filter_by(name=interest_name).first()
-                if not interest:
-                    interest = Interest(name=interest_name)
-                    db.session.add(interest)
-                    db.session.flush()  # get id
-                # check if advice already exists
-                existing = Advice.query.filter_by(interest_id=interest.id, text=advice_text).first()
-                if not existing:
-                    db.session.add(Advice(interest_id=interest.id, text=advice_text))
+                try:
+                    interest = Interest.query.filter_by(name=interest_name).first()
+                    if not interest:
+                        interest = Interest(name=interest_name)
+                        db.session.add(interest)
+                        db.session.flush()  # get id
+                    # check if advice already exists
+                    existing = Advice.query.filter_by(interest_id=interest.id, text=advice_text).first()
+                    if not existing:
+                        db.session.add(Advice(interest_id=interest.id, text=advice_text))
+                except Exception as e:
+                    print(f"Error seeding {interest_name}: {e}")
+                    db.session.rollback()
             db.session.commit()
     except FileNotFoundError:
-        pass
+        print("advice_data.json not found, skipping seed")
+    except Exception as e:
+        print(f"Error during seeding: {e}")
+        db.session.rollback()
 
 @app.route('/')
 def index():
