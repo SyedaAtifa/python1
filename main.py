@@ -9,14 +9,22 @@ from models.advice import Advice
 from models.career_advice import CareerAdvice
 from flask_login import login_user, logout_user, login_required, current_user
 
-app = Flask(__name__)
+# Get the base directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(__name__, 
+            template_folder=os.path.join(BASE_DIR, 'templates'),
+            static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 # Use /tmp for Vercel serverless, local for development
 if os.environ.get('VERCEL'):
     db_path = '/tmp/career.db'
 else:
-    db_path = 'instance/career.db'
+    db_path = os.path.join(BASE_DIR, 'instance/career.db')
+
+# Ensure instance directory exists locally
+os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -30,6 +38,11 @@ csrf = CSRFProtect(app)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+@app.route('/health')
+def health():
+    """Health check endpoint for deployment monitoring"""
+    return jsonify({'status': 'ok', 'message': 'Career Advice Boat is running'}), 200
 
 def create_tables():
     try:
