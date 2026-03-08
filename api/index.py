@@ -1,29 +1,25 @@
-import os
 import sys
+import os
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure parent directory is in the path
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 try:
+    # Import Flask app directly
     from main import app
     
-    # Initialize database on first request
-    @app.before_request
-    def init_db():
-        if not hasattr(app, '_db_initialized'):
-            try:
-                from main import db, create_tables
-                with app.app_context():
-                    create_tables()
-                app._db_initialized = True
-            except Exception as e:
-                print(f"Database init error: {e}")
-                
-except Exception as e:
-    print(f"Import error: {e}")
+    # Vercel WSGI handler
+    def handler(environ, start_response):
+        return app.wsgi_app(environ, start_response)
+    
+except ImportError as e:
+    print(f"Fatal import error: {e}")
     import traceback
     traceback.print_exc()
-    raise
-
-# Export for Vercel
-handler = app.wsgi_app
+    
+    # Fallback minimal app if import fails
+    def handler(environ, start_response):
+        status = '500 Internal Server Error'
+        response_headers = [('Content-Type', 'text/plain')]
+        start_response(status, response_headers)
+        return [b'Failed to import app']
